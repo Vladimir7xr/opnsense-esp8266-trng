@@ -78,7 +78,7 @@ Only **3 wires** are required between the ESP8266 module (ESP-12F / ESP-07 / ESP
 Connect the CP2102 adapter to your OPNsense router, log in via SSH as `root`, and run:
 
 ```sh
-git clone https://github.com
+git clone https://github.com/Vladimir7xr/opnsense-esp8266-trng
 cd opnsense-esp8266-trng
 chmod +x install.sh uninstall.sh
 ./install.sh
