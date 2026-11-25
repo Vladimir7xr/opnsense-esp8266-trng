@@ -61,10 +61,6 @@ Only **3 wires** are required between the ESP8266 module (ESP-12F / ESP-07 / ESP
 * **Unique Byte Values:** `256 / 256`
 * **Monte Carlo π Estimation:** `3.14697` (`0.17%` error)
 
-### 4. GRC DNS Spoofability Test (OPNsense Unbound)
-* **Source Port Max Entropy:** `15.92–15.96 bits` (Excellent, `0` stuck bits)
-* **Transaction ID Max Entropy:** `16.00 bits` (Excellent, `0` stuck bits)
-
 ---
 
 ## Installation
