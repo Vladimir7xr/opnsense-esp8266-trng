@@ -1,0 +1,10 @@
+#!/bin/sh
+
+PIDFILE="/var/run/esp-trng-feeder.pid"
+DAEMON="/usr/local/sbin/esp-trng-feeder.sh"
+
+if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
+    exit 0
+fi
+
+/usr/sbin/daemon -f -p /var/run/esp-trng-supervisor.pid "$DAEMON"

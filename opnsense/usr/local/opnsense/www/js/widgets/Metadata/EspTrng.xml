@@ -1,0 +1,19 @@
+<metadata>
+    <esptrng>
+        <filename>EspTrng.js</filename>
+        <endpoints>
+            <endpoint>/api/esptrng/service/*</endpoint>
+        </endpoints>
+        <translations>
+            <title>ESP8266 Hardware TRNG</title>
+            <status>Status</status>
+            <injected>Entropy Injected</injected>
+            <throughput>Throughput</throughput>
+            <uptime>Session Uptime</uptime>
+            <device>Device</device>
+            <running>Active</running>
+            <stalled>Stalled</stalled>
+            <stopped>Stopped</stopped>
+        </translations>
+    </esptrng>
+</metadata>

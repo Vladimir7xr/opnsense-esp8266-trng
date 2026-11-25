@@ -1,0 +1,8 @@
+#!/bin/sh
+
+for pf in /var/run/esp-trng-supervisor.pid /var/run/esp-trng-feeder.pid; do
+    if [ -f "$pf" ]; then
+        kill "$(cat "$pf")" 2>/dev/null
+        rm -f "$pf"
+    fi
+done

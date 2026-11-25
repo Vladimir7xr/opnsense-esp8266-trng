@@ -1,5 +1,3 @@
-# opnsense-esp8266-trng
-Hardware True Random Number Generator (TRNG) based on ESP8266 + CP2102 for OPNsense (FreeBSD) with RAM-backed Dashboard widget.
 # Hardware TRNG (ESP8266 + CP2102) for OPNsense
 
 A standalone, zero-component **Hardware True Random Number Generator (TRNG)** based on an ESP8266 microcontroller and a Silicon Labs CP2102 USB-to-UART bridge, built to feed high-quality hardware entropy directly into the FreeBSD **Fortuna** CSPRNG (`/dev/random`) on **OPNsense**.
@@ -117,41 +115,6 @@ sysctl kern.random
 
 # View watchdog events in system log
 grep esp-trng /var/log/system/latest.log
-```
-
----
-
-## Repository Structure
-
-```text
-├── docs/
-│   └── widget-preview.png
-├── firmware/
-│   └── esp8266_trng/
-│       └── esp8266_trng.ino
-├── opnsense/
-│   └── usr/local/
-│       ├── etc/
-│       │   ├── devd/esp_trng.conf
-│       │   ├── inc/plugins.inc.d/esp_trng.inc
-│       │   └── rc.syshook.d/
-│       │       ├── start/90-esp-trng
-│       │       └── stop/90-esp-trng
-│       ├── opnsense/
-│       │   ├── mvc/app/
-│       │   │   ├── controllers/OPNsense/EspTrng/Api/ServiceController.php
-│       │   │   └── models/OPNsense/EspTrng/ACL/ACL.xml
-│       │   └── service/conf/actions.d/actions_esp_trng.conf
-│       ├── sbin/
-│       │   ├── esp-trng-feeder.sh
-│       │   └── esp-trng-test.sh
-│       └── www/js/widgets/
-│           ├── EspTrng.js
-│           └── Metadata/EspTrng.xml
-├── install.sh
-├── uninstall.sh
-├── LICENSE
-└── README.md
 ```
 
 ## License
