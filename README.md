@@ -38,7 +38,7 @@ Only **3 wires** are required between the ESP8266 module (ESP-12F / ESP-07 / ESP
 
 ---
 
-## Verified Entropy Benchmarks (Firmware v2.0)
+## Verified Entropy Benchmarks
 
 ### 1. Pre-Conditioning Raw Entropy (`NIST SP 800-90B`, 50,000 bytes)
 * **NIST Min-Entropy (MCV):** `3.6930 bits/byte` (threshold for 16:1 compression: `>= 0.5000`, **7.38x safety margin**)
