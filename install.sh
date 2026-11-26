@@ -48,13 +48,17 @@ php -l /usr/local/opnsense/mvc/app/controllers/OPNsense/EspTrng/Api/ServiceContr
 
 echo "[5/6] Reloading devd, plugins, ACL cache, and configd..."
 service devd restart
-for tty in /dev/cuaU*; do
-    if [ -c "$tty" ]; then
-        if usbconfig | grep -qi "CP2102\|10c4:ea60"; then
-            ln -sf "$tty" /dev/trng_esp
-            break
-        fi
-    fi
+for idx in $(sysctl -N dev.uslcom 2>/dev/null | sed -n 's/^dev\.uslcom\.\([0-9]*\)\.%pnpinfo$/\1/p'); do
+    pnp=$(sysctl -n "dev.uslcom.${idx}.%pnpinfo" 2>/dev/null)
+    case "$pnp" in
+        *"vendor=0x10c4"*"product=0xea60"*|*"product=0xea60"*"vendor=0x10c4"*)
+            tty=$(sysctl -n "dev.uslcom.${idx}.ttyname" 2>/dev/null)
+            if [ -n "$tty" ] && [ -c "/dev/cua${tty}" ]; then
+                ln -sf "/dev/cua${tty}" /dev/trng_esp
+                break
+            fi
+            ;;
+    esac
 done
 
 rm -f /tmp/opnsense_acl_cache.json
@@ -63,6 +67,8 @@ service configd restart
 configctl webgui restart
 
 echo "[6/6] Starting ESP8266 TRNG feeder..."
+/usr/local/etc/rc.syshook.d/stop/90-esp-trng 2>/dev/null || true
+sleep 1
 /usr/local/etc/rc.syshook.d/start/90-esp-trng
 
 echo ""
