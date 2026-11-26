@@ -63,6 +63,20 @@ Only **3 wires** are required between the ESP8266 module (ESP-12F / ESP-07 / ESP
 
 ---
 
+## Pre-Deployment Hardware Verification (Recommended)
+
+Because power supply ripple and LDO quality vary across ESP8266 boards (ESP-12F, ESP-07, ESP-01), you should verify that your specific module produces sufficient **raw physical entropy** before cryptographic whitening.
+
+1. Flash `tools/raw_entropy_dump/raw_entropy_dump.ino` to your ESP8266. *(Note: This diagnostic sketch bypasses SHA-256 conditioning and outputs raw ADC/jitter samples).*
+2. Run the verification script on your workstation (requires `pyserial`):
+   ```bash
+   python3 tools/check_raw_entropy.py /dev/ttyUSB0 50000
+   ```
+3. Confirm that **NIST MCV Min-Entropy** is well above `0.5000 bits/byte` (typically `3.0–4.0 bits/byte`, giving a >6x safety margin for 16:1 SHA-256 compression).
+4. Once verified, flash the production firmware (`firmware/esp8266_trng/esp8266_trng.ino`) and disconnect the `TXD` line.
+
+---
+
 ## Installation
 
 ### Step 1: Flash the ESP8266
