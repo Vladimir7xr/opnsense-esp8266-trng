@@ -82,7 +82,7 @@ while true; do
             fi
 
             kill -INFO "$DD_PID" 2>/dev/null
-            sleep 0.1
+            sleep 0.2
 
             CUR_BYTES=$(cat "$DDBYTES" 2>/dev/null)
             CUR_BYTES=${CUR_BYTES:-0}
