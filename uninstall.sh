@@ -9,6 +9,7 @@ fi
 echo "[1/3] Stopping ESP8266 TRNG feeder..."
 if [ -x /usr/local/etc/rc.syshook.d/stop/90-esp-trng ]; then
     /usr/local/etc/rc.syshook.d/stop/90-esp-trng
+    sleep 1
 fi
 
 echo "[2/3] Removing installed files..."
@@ -24,7 +25,7 @@ rm -rf /usr/local/opnsense/mvc/app/models/OPNsense/EspTrng
 rm -f /usr/local/opnsense/www/js/widgets/Metadata/EspTrng.xml
 rm -f /usr/local/opnsense/www/js/widgets/EspTrng.js
 rm -f /dev/trng_esp
-rm -f /tmp/esp_trng_stats.json /tmp/esp_trng_dd.log
+rm -f /tmp/esp_trng_stats.json /tmp/esp_trng_stats.json.tmp /tmp/esp_trng_dd.pipe /tmp/esp_trng_bytes
 
 echo "[3/3] Reloading OPNsense services..."
 service devd restart
