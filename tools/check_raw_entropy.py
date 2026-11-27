@@ -2,7 +2,7 @@
 """
 Quick Raw Entropy Estimator (NIST SP 800-90B MCV Approximation)
 Captures raw bytes from ESP8266 running raw_entropy_dump.ino and checks
-if the hardware noise floor is sufficient for 16:1 SHA-256 conditioning.
+if the hardware noise floor is sufficient for 32:1 HMAC-SHA256 conditioning.
 """
 
 import os
@@ -14,6 +14,10 @@ from collections import Counter
 PORT = sys.argv[1] if len(sys.argv) > 1 else "/dev/trng_esp"
 BYTES_TO_CAPTURE = int(sys.argv[2]) if len(sys.argv) > 2 else 50000
 BAUD = "115200"
+
+# 32:1 compression (1024 raw bytes -> 32 output bytes / 256 bits) requires >= 0.2500 bits/byte.
+MIN_REQUIRED_ENTROPY = 0.2500
+SAFE_MARGIN_ENTROPY = 0.5000
 
 
 def configure_uart_freebsd(port: str):
@@ -35,6 +39,10 @@ def configure_uart_freebsd(port: str):
 
 def analyze(data: bytes):
     n = len(data)
+    if n < 2:
+        print("Error: Insufficient data captured for analysis.")
+        sys.exit(1)
+
     counts = Counter(data)
     unique = len(counts)
 
@@ -56,15 +64,13 @@ def analyze(data: bytes):
     print(f"Unique byte values : {unique} / 256")
     print(f"Raw Bit Bias       : {bias:.2f}% (ideal: 0.00%)")
     print(f"Shannon Entropy    : {shannon:.4f} bits/byte")
-    print(f"NIST MCV Min-Entr. : {min_entropy:.4f} bits/byte (required >= 0.5000)")
+    print(f"NIST MCV Min-Entr. : {min_entropy:.4f} bits/byte (required >= {MIN_REQUIRED_ENTROPY:.4f} for 32:1)")
 
-    # 16:1 compression (512 bytes -> 32 bytes) requires >= 0.5000 bits/byte.
-    # Require >= 1.0000 for at least a 2x safety margin.
-    if min_entropy >= 1.0:
-        margin = min_entropy / 0.5
+    if min_entropy >= SAFE_MARGIN_ENTROPY:
+        margin = min_entropy / MIN_REQUIRED_ENTROPY
         print(f"VERDICT            : PASS (Safety margin: {margin:.2f}x)")
-    elif min_entropy >= 0.5:
-        print("VERDICT            : MARGINAL (Passes minimum 0.5, low safety margin.)")
+    elif min_entropy >= MIN_REQUIRED_ENTROPY:
+        print(f"VERDICT            : MARGINAL (Passes minimum {MIN_REQUIRED_ENTROPY:.4f}, low safety margin.)")
     else:
         print("VERDICT            : FAIL (Insufficient hardware entropy! Do NOT use this board.)")
 
@@ -73,10 +79,10 @@ def main():
     # Stop background feeder if running on OPNsense so it doesn't compete for UART
     subprocess.run(["configctl", "esp_trng", "stop"], capture_output=True)
 
-    configure_uart_freebsd(PORT)
-    print(f"Reading from {PORT} at {BAUD} baud...")
-
     try:
+        configure_uart_freebsd(PORT)
+        print(f"Reading from {PORT} at {BAUD} baud...")
+
         with open(PORT, "rb", buffering=0) as f:
             # Discard first 1024 bytes (cold start & stale UART buffer)
             discarded = 0
@@ -86,7 +92,8 @@ def main():
                     break
                 discarded += len(chunk)
 
-            print(f"Capturing {BYTES_TO_CAPTURE} raw bytes (~4 seconds)...")
+            est_sec = max(1, round(BYTES_TO_CAPTURE / 1200))
+            print(f"Capturing {BYTES_TO_CAPTURE} raw bytes (~{est_sec} seconds)...")
             buf = bytearray()
             while len(buf) < BYTES_TO_CAPTURE:
                 chunk = f.read(min(4096, BYTES_TO_CAPTURE - len(buf)))
@@ -99,6 +106,8 @@ def main():
     except KeyboardInterrupt:
         print("\nAborted by user.")
         sys.exit(1)
+    finally:
+        subprocess.run(["configctl", "esp_trng", "start"], capture_output=True)
 
 
 if __name__ == "__main__":
