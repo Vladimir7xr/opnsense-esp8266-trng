@@ -12,7 +12,7 @@ Includes full service integration (`configd`, `devd`, `rc.syshook.d`), an automa
 
 ## Key Features
 
-* **Zero External Components:** Uses internal silicon power supply thermal noise (`ADC_MODE(ADC_VCC)` / `ESP.getVcc()`) combined with CPU cycle jitter (`ESP.getCycleCount()`) and non-periodic delays (`10 + ((vcc ^ c1) & 0x1F)` µs). Pin `A0` (`TOUT`) is left floating.
+* **Zero External Components:** Four semi-independent physical sources XOR-mixed per bit: (1) internal silicon power supply thermal noise (`ADC_MODE(ADC_VCC)` / `ESP.getVcc()`), (2) CPU cycle jitter (`ESP.getCycleCount()`), (3) the third bit of the CPU cycle counter (`c2 >> 2`, captures long-term crystal/thermal drift), and (4) the undocumented `WDEV` free-running timer (`0x3FF20C00`, captures APB/CPU clock-domain-crossing phase jitter). Non-periodic delays (`10 + ((vcc ^ c1) & 0x1F)` µs) break 50/60 Hz mains harmonics. Pin `A0` (`TOUT`) is left floating. Because XOR is a mixing operator, the output remains unpredictable as long as **at least one** of the four sources carries non-deterministic bits — if `WDEV` happens to be constant on a given board (see below), the other three keep working.
 * **Physical Data Diode (with firmware defense-in-depth):** The ESP8266 `RX` (`GPIO3`) line is physically disconnected from the adapter's `TXD` pin, and `GPIO3` is configured as `INPUT_PULLUP` right after `Serial.begin()`. **The security guarantee comes from the missing wire, not from the firmware** — if someone re-solders `TXD`, the pin becomes an active UART RX again. The `INPUT_PULLUP` is defense-in-depth against accidental noise, not a cryptographic boundary.
 * **EMI Shielding & Low Power:** Wi-Fi is hard-disabled (`WIFI_OFF` + `forceSleepBegin()`, ~15–20 mA draw). All unused GPIOs are pulled up/down internally to eliminate floating-pin electromagnetic interference.
 * **Real-Time Multi-Stage Health Check (scaled for 8192 raw bits per block):**
@@ -44,10 +44,10 @@ Only **3 wires** are required between the ESP8266 module (ESP-12F / ESP-07 / ESP
 
 ## Verified Entropy Benchmarks
 
-### 1. Pre-Conditioning Raw Entropy (`NIST SP 800-90B`, 32,500 bytes)
-* **NIST Min-Entropy (MCV):** `4.5420 bits/byte` (threshold for 32:1 compression: `>= 0.2500`, **18.17x safety margin**)
-* **Raw Shannon Entropy:** `7.0369 bits/byte`
-* **Raw Bit Bias:** `10.48%` (completely whitened by the SHA-256 extractor)
+### 1. Pre-Conditioning Raw Entropy (`NIST SP 800-90B`, 200,000 bytes)
+* **NIST Min-Entropy (MCV):** `7.1629 bits/byte` on a 200,000-byte run; `7.18 ± 0.08 bits/byte` across five independent 32,500-byte runs (threshold for 32:1 compression: `>= 0.2500`, **~28.7x safety margin**)
+* **Raw Shannon Entropy:** `7.9749 bits/byte` (theoretical ceiling for 200,000 bytes: `7.9996`)
+* **Raw Bit Bias:** `0.02%` (was `10.48%` before the WDEV timer was added as a fourth source)
 * **Unique Byte Values:** `256 / 256`
 
 ### 2. `FIPS 140-2` Statistical Suite (260,000 bits / 13 consecutive 20,000-bit blocks)
@@ -165,7 +165,16 @@ This project is honest about what it is and is not. Read this before deploying.
 | Compromised OPNsense host | ❌ No | If the host is compromised, entropy quality is the least of your problems. |
 | Weak OS-level entropy on the host | ⚠️ Marginal | This is the only scenario where this project helps — and even then, only slightly. |
 
-**Bottom line:** Do not deploy it expecting a security improvement to your firewall. If you want stronger entropy on OPNsense, ensure your CPU's hardware RNG (`RDRAND`/`RDSEED`) is enabled and trusted first.
+**Porting to a different board (ESP-12F / ESP-07 / ESP-01)**
+
+The reference measurements in this README were taken on a specific ESP-12F module. Different modules — especially those paired with a high-quality low-noise LDO and low-ESR capacitors — may show a *narrower* raw ADC range. The firmware reacts to that via `ADC_MIN_RANGE`:
+
+* If throughput drops to **zero** after flashing production firmware, run `check_raw_entropy.py` first. If it shows `Raw MCV Min-Entropy >= 2.0 bits/byte`, the source is alive — only the range check is too strict for your board.
+* In that case, lower `ADC_MIN_RANGE` from `2` to `1` in `ESPRNDv3.ino`, reflash, and verify throughput returns. Do **not** remove the check entirely — it is what prevents a dead ADC from feeding a constant stream into the extractor.
+* If `check_raw_entropy.py` itself reports `VERDICT: FAIL` (MCV < 0.25 bits/byte), the board's noise floor is genuinely insufficient. Do not deploy it — the extractor cannot manufacture entropy that is not there.
+* **`WDEV_NOW()` caveat:** The `0x3FF20C00` timer is an undocumented WiFi MAC peripheral register. On the reference ESP-12F module it keeps ticking under `forceSleepBegin()` and is the **strongest** of the four sources: adding it dropped raw bit bias from `10.48%` to `~0.02%` and raised NIST MCV from `4.5420` to `7.16 bits/byte` (validated on a 200,000-byte run; consistent across five independent 32,500-byte runs). On other boards (or with more aggressive `forceSleepBegin()` behavior) it may read as a **constant** — harmless, because XOR with a constant is a no-op, and the other three sources still provide `~4.5 bits/byte` (18x safety margin). Re-measure MCV on each board; if it drops to the 4–5 range, WDEV was not contributing.
+
+**Conclusion:** Do not deploy it expecting a security improvement to your firewall. If you want stronger entropy on OPNsense, ensure your CPU's hardware RNG (`RDRAND`/`RDSEED`) is enabled and trusted first.
 
 ---
 
