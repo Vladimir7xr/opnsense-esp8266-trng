@@ -2,6 +2,9 @@
 
 ADC_MODE(ADC_VCC);
 
+// WDEV free-running timer — see esp8266_trng.ino for full caveats.
+#define WDEV_NOW() (*(volatile uint32_t *)0x3FF20C00)
+
 #define RAW_BUFFER_SIZE 1024
 uint8_t raw_buffer[RAW_BUFFER_SIZE];
 
@@ -32,8 +35,9 @@ void loop() {
       uint32_t c1 = ESP.getCycleCount();
       delayMicroseconds(10 + ((vcc ^ c1) & 0x1F));
       uint32_t c2 = ESP.getCycleCount();
+      uint32_t wdev = WDEV_NOW();
 
-      uint8_t entropy_bit = (vcc ^ (vcc >> 1) ^ (c2 - c1) ^ (c2 >> 2)) & 1;
+      uint8_t entropy_bit = (vcc ^ (vcc >> 1) ^ (c2 - c1) ^ (c2 >> 2) ^ wdev ^ (wdev >> 1)) & 1;
       sample_byte = (sample_byte << 1) | entropy_bit;
     }
     raw_buffer[i] = sample_byte;
