@@ -16,7 +16,7 @@ restore_feeder() {
     echo ""
     echo "[*] Restarting background esp-trng-feeder..."
     "$START_HOOK"
-    sleep 1
+    sleep 2
     if [ -f /var/run/esp-trng-feeder.pid ]; then
         echo "[OK] Feeder running (PID: $(cat /var/run/esp-trng-feeder.pid))."
     else
@@ -30,7 +30,8 @@ echo "[*] Stopping background feeder..."
 "$STOP_HOOK"
 sleep 1
 
-echo "[*] Configuring $DEV ($BAUD 8N1 raw) and capturing $BYTES bytes (~$((BYTES / 70)) sec)..."
+EST_SEC=$(( (BYTES + 36) / 37 ))
+echo "[*] Configuring $DEV ($BAUD 8N1 raw) and capturing $BYTES bytes (~${EST_SEC} sec)..."
 exec 3< "$DEV"
 stty -f "$DEV" "$BAUD" raw cs8 -cstopb -parenb -crtscts -ixon -ixoff clocal
 
@@ -43,7 +44,7 @@ t0 = time.monotonic()
 
 f = sys.stdin.buffer
 while len(buf) < target:
-    chunk = f.read(min(64, target - len(buf)))
+    chunk = f.read(min(32, target - len(buf)))
     if not chunk:
         break
     buf.extend(chunk)
