@@ -165,7 +165,7 @@ This project is honest about what it is and is not. Read this before deploying.
 | Compromised OPNsense host | ❌ No | If the host is compromised, entropy quality is the least of your problems. |
 | Weak OS-level entropy on the host | ⚠️ Marginal | This is the only scenario where this project helps — and even then, only slightly. |
 
-**Bottom line:** Use this project because it is a well-engineered, cryptographically correct educational build that produces verifiably high-quality bits. Do not deploy it expecting a security improvement to your firewall. If you want stronger entropy on OPNsense, ensure your CPU's hardware RNG (`RDRAND`/`RDSEED`) is enabled and trusted first.
+**Bottom line:** Do not deploy it expecting a security improvement to your firewall. If you want stronger entropy on OPNsense, ensure your CPU's hardware RNG (`RDRAND`/`RDSEED`) is enabled and trusted first.
 
 ---
 
