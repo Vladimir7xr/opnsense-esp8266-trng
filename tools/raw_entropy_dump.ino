@@ -2,7 +2,7 @@
 
 ADC_MODE(ADC_VCC);
 
-#define RAW_BUFFER_SIZE 512
+#define RAW_BUFFER_SIZE 1024
 uint8_t raw_buffer[RAW_BUFFER_SIZE];
 
 void setup() {
