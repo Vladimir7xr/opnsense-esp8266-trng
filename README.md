@@ -18,7 +18,7 @@ Includes full service integration (`configd`, `devd`, `rc.syshook.d`), an automa
 * **Real-Time Multi-Stage Health Check (scaled for 8192 raw bits per block):**
   1. *RCT (Repetition Count Test, SP 800-90B-inspired):* Rejects blocks containing a run of `>= 41` identical consecutive bits. Conservative assumption `H = 0.5 bit/sample`, false-positive rate `alpha = 2^-20`.
   2. *APT (Adaptive Proportion Test, SP 800-90B-inspired):* Non-overlapping `1024`-bit windows inside each block must contain between `224` and `800` ones (8 windows per 8192-bit block). Catches *local* bias that global monobit misses.
-  3. *ADC Range Check:* Requires `(max_vcc - min_vcc) >= 4` LSB across the block (replaces the old `min_vcc != max_vcc`, which passed on a 1-LSB fluctuation).
+  3. *ADC Range Check:* Requires `(max_vcc - min_vcc) >= 2` LSB across the block (replaces the old `min_vcc != max_vcc`, which passed on a 1-LSB fluctuation).
   4. *Lag-1 & Lag-2 Pattern Lock:* Rejects stuck square waves (`101010...` and `11001100...`) — accepted band `1600..6592` matches (~20%–80%).
   5. *Monobit Bias Bounds:* Rejects blocks outside `2048..6144` ones per `8192` raw bits (25%–75%).
   6. *Cold-Start Discard:* Drops the very first block after power-on before emitting data.
